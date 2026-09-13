@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DCP Civic Reg</string>
+    <string name="title_activity_main">DCP Civic Reg</string>
+    <string name="package_name">com.dcp.civicreg</string>
+    <string name="custom_url_scheme">com.dcp.civicreg</string>
+</resources>
