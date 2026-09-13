@@ -55,15 +55,14 @@ jobs:
       - name: Locate and rename APK
         working-directory: android
         run: |
-          APK_PATH=
-          if [ -z "" ]; then
+          APK_PATH=$(find app/build/outputs/apk -type f -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
             echo "ERROR: No APK was generated"
             find app/build/outputs -type f -print || true
             exit 1
           fi
-          echo "Found APK: "
-          cp "" ../DCP-Civic-Reg.apk
-
+          echo "Found APK: $APK_PATH"
+          cp "$APK_PATH" ../DCP-Civic-Reg.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
