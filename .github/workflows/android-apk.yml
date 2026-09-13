@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install web dependencies
@@ -59,3 +59,4 @@ jobs:
           name: DCP-Civic-Reg
           path: DCP-Civic-Reg.apk
           if-no-files-found: error
+
