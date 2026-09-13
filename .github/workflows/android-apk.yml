@@ -40,9 +40,6 @@ jobs:
       - name: Install Capacitor
         run: npm install --no-save @capacitor/cli@8 @capacitor/core@8 @capacitor/android@8
 
-      - name: Create Android project
-        run: npx cap add android
-
       - name: Sync web app into Android
         run: npx cap sync android
 
@@ -59,4 +56,3 @@ jobs:
           name: DCP-Civic-Reg
           path: DCP-Civic-Reg.apk
           if-no-files-found: error
-
