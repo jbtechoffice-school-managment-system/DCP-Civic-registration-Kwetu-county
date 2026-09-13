@@ -1,4 +1,4 @@
-﻿name: Build DCP Civic Reg APK
+name: Build DCP Civic Reg APK
 
 on:
   workflow_dispatch:
@@ -28,6 +28,11 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
       - name: Install web dependencies
         run: npm ci
 
@@ -56,3 +61,4 @@ jobs:
           name: DCP-Civic-Reg
           path: DCP-Civic-Reg.apk
           if-no-files-found: error
+
