@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -230,13 +230,26 @@ export const supabaseApi = {
   },
   app: {
     async getPublicSettings() {
-      const { data } = await supabase.from('organizations').select('id,name,short_name,description,logo_path,settings').eq('active', true).order('created_at').limit(1).maybeSingle();
-      return data || { id: null, public_settings: {} };
+      return { id: null, public_settings: {} };
     }
   },
   users: {
-    async inviteUser(email, role) {
-      throw new Error('User invitations require a secure Supabase Edge Function. The UI is preserved; configure the invite function before production.');
+    async inviteUser(email, role, details = {}) {
+      const { data, error } = await supabase.functions.invoke('invite-agent', {
+        body: {
+          email,
+          role,
+          ...details,
+        },
+      });
+
+      if (error) throw error;
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Invitation failed');
+      }
+
+      return data;
     }
   },
   functions: {
@@ -273,3 +286,4 @@ export const supabaseApi = {
     }
   }
 };
+

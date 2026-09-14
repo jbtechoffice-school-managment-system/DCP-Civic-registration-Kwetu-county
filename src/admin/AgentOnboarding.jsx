@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { supabaseApi } from '@/api/supabaseApi';
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card';
 import { Button } from '@/ui/button';
@@ -22,8 +22,14 @@ export default function AgentOnboarding() {
     if (!form.email.trim() || !form.full_name.trim()) { toast({ title: 'Email and name are required', variant: 'destructive' }); return; }
     setSubmitting(true);
     try {
-      await supabaseApi.users.inviteUser(form.email.trim(), form.role);
-      toast({ title: '✅ Agent invited successfully', description: `${form.email} has been invited as ${form.role}. Reference: ${generateRef()}` });
+      await supabaseApi.users.inviteUser(form.email.trim(), form.role, {
+        full_name: form.full_name.trim(),
+        phone: form.phone.trim(),
+        county: form.county,
+        constituency: form.constituency,
+        ward: form.ward,
+      });
+      toast({ title: 'âœ… Agent invited successfully', description: `${form.email} has been invited as ${form.role}. Reference: ${generateRef()}` });
       setForm({ email: '', full_name: '', phone: '', county: '', constituency: '', ward: '', role: 'field_agent' });
     } catch (e) { toast({ title: 'Could not invite agent', description: e.message, variant: 'destructive' }); }
     finally { setSubmitting(false); }
@@ -79,7 +85,7 @@ export default function AgentOnboarding() {
           <div className="rounded-lg bg-sky-50 border border-sky-200 p-3">
             <p className="text-xs text-sky-800">Agent reference will be auto-generated: <span className="font-mono font-bold">{generateRef()}</span></p>
           </div>
-          <Button onClick={submit} disabled={submitting} className="w-full">{submitting ? 'Inviting…' : 'Invite Agent'}</Button>
+          <Button onClick={submit} disabled={submitting} className="w-full">{submitting ? 'Invitingâ€¦' : 'Invite Agent'}</Button>
         </CardContent>
       </Card>
     </div>
