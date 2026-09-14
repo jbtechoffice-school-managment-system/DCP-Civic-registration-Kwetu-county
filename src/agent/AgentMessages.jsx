@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { supabaseApi } from '@/api/supabaseApi';
+import { supabase, supabaseApi } from '@/api/supabaseApi';
 import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
 import { Card, CardContent } from '@/ui/card';
@@ -17,18 +17,54 @@ export default function AgentMessages() {
   const endRef = useRef(null);
 
   const load = async () => {
+    if (!me?.id) {
+      setConversations([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const all = await supabaseApi.entities.Conversation.list('-last_message_at', 50);
-      setConversations(all);
-    } catch {} finally { setLoading(false); }
+      const { data: memberships, error: membershipError } = await supabase
+        .from('conversation_members')
+        .select('conversation_id')
+        .eq('user_id', me.id);
+
+      if (membershipError) throw membershipError;
+
+      const conversationIds = (memberships || []).map((row) => row.conversation_id);
+
+      if (conversationIds.length === 0) {
+        setConversations([]);
+        return;
+      }
+
+      const { data: all, error: conversationError } = await supabase
+        .from('conversations')
+        .select('*')
+        .in('id', conversationIds)
+        .order('last_message_at', { ascending: false, nullsFirst: false })
+        .limit(50);
+
+      if (conversationError) throw conversationError;
+
+      setConversations(all || []);
+    } catch (error) {
+      console.warn('Could not load agent conversations:', error);
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    load();
+  }, [me?.id]);
 
   const open = async (c) => {
     setActive(c);
     setMessages([]);
     try {
-      const msgs = await supabaseApi.entities.Message.filter({ conversation_id: c.id }, 'created_date', 200);
+      const msgs = await supabaseApi.entities.Message.filter({ conversation_id: c.id }, 'created_at', 200);
       setMessages(msgs);
       endRef.current?.scrollIntoView({ behavior: 'smooth' });
     } catch {}

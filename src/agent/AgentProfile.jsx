@@ -23,13 +23,37 @@ export default function AgentProfile() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    if (!me?.id) {
+      setSession(null);
+      return;
+    }
+
+    let alive = true;
+
     (async () => {
       try {
-        const sessions = await supabaseApi.entities.LocationSession.filter({ status: { $in: ['active', 'paused'] } }, '-started_at', 1);
-        setSession(sessions[0] || null);
-      } catch {}
+        const sessions = await supabaseApi.entities.LocationSession.filter(
+          {
+            status: { $in: ['active', 'paused'] },
+            agent_id: me.id,
+          },
+          '-started_at',
+          1
+        );
+
+        if (alive) {
+          setSession(sessions[0] || null);
+        }
+      } catch (error) {
+        console.warn('Could not load field location session:', error);
+        if (alive) setSession(null);
+      }
     })();
-  }, []);
+
+    return () => {
+      alive = false;
+    };
+  }, [me?.id]);
 
   useEffect(() => {
     if (me) setProfile({ full_name: me.full_name || '', phone: me.phone || '', agent_reference: me.agent_reference || '', operating_area: me.operating_area || '' });

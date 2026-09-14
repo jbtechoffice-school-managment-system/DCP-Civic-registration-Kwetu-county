@@ -1,31 +1,29 @@
-import { useEffect, useState } from 'react';
-import { supabaseApi } from '@/api/supabaseApi';
+import { useAuth } from '@/lib/AuthContext';
 
-// Hook returning the current user with role + profile fields.
+// Hook returning the current authenticated profile with role + profile fields.
+// AuthContext owns the Supabase session check so components do not create
+// duplicate auth requests or refresh-token loops.
 export function useCurrentUser() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoadingAuth, authChecked } = useAuth();
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const me = await supabaseApi.auth.me();
-        if (alive) {
-          setUser(me);
-          setLoading(false);
-        }
-      } catch {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => { alive = false; };
-  }, []);
-
-  return { user, loading };
+  return {
+    user,
+    loading: isLoadingAuth || !authChecked,
+  };
 }
 
-export function isAdmin(u) { return u?.role === 'admin'; }
-export function isSupervisor(u) { return u?.role === 'supervisor'; }
-export function isAgent(u) { return u?.role === 'field_agent'; }
-export function isStaff(u) { return isAdmin(u) || isSupervisor(u); }
+export function isAdmin(u) {
+  return u?.role === 'admin';
+}
+
+export function isSupervisor(u) {
+  return u?.role === 'supervisor';
+}
+
+export function isAgent(u) {
+  return u?.role === 'field_agent';
+}
+
+export function isStaff(u) {
+  return isAdmin(u) || isSupervisor(u);
+}

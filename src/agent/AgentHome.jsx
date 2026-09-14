@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabaseApi } from '@/api/supabaseApi';
+import { supabase, supabaseApi } from '@/api/supabaseApi';
 import { UserPlus, Users, MessageSquare, Activity, MapPin, Pause, Square, Play } from 'lucide-react';
 import { queueLength } from '@/lib/offline';
 import { logAudit } from '@/lib/audit';
@@ -20,7 +20,30 @@ export default function AgentHome() {
       try {
         const [all, convs] = await Promise.all([
           supabaseApi.entities.Registration.filter({}, '-created_date', 200),
-          supabaseApi.entities.Conversation.list('-last_message_at', 50),
+          (async () => {
+            if (!me?.id) return [];
+
+            const { data: memberships, error: membershipError } = await supabase
+              .from('conversation_members')
+              .select('conversation_id')
+              .eq('user_id', me.id);
+
+            if (membershipError) throw membershipError;
+
+            const conversationIds = (memberships || []).map((row) => row.conversation_id);
+
+            if (conversationIds.length === 0) return [];
+
+            const { data: conversations, error: conversationError } = await supabase
+              .from('conversations')
+              .select('id')
+              .in('id', conversationIds)
+              .limit(50);
+
+            if (conversationError) throw conversationError;
+
+            return conversations || [];
+          })(),
         ]);
         const todayStr = new Date().toISOString().slice(0, 10);
         const today = all.filter((r) => (r.created_date || '').slice(0, 10) === todayStr);
@@ -35,16 +58,42 @@ export default function AgentHome() {
         setRecent(all.slice(0, 5));
       } catch {} finally { setLoading(false); }
     })();
-  }, []);
+  }, [me?.id]);
 
   useEffect(() => {
+    if (!me?.id) {
+      setSession(null);
+      return;
+    }
+
+    let alive = true;
+
     (async () => {
       try {
-        const sessions = await supabaseApi.entities.LocationSession.filter({ status: { $in: ['active', 'paused'] } }, '-started_at', 1);
-        setSession(sessions[0] || null);
-      } catch {}
+        const sessions = await supabaseApi.entities.LocationSession.filter(
+          {
+            status: { $in: ['active', 'paused'] },
+            agent_id: me.id,
+          },
+          '-started_at',
+          1
+        );
+
+        if (alive) {
+          setSession(sessions[0] || null);
+        }
+      } catch (error) {
+        console.warn('Could not load my field location session:', error);
+        if (alive) {
+          setSession(null);
+        }
+      }
     })();
-  }, []);
+
+    return () => {
+      alive = false;
+    };
+  }, [me?.id]);
 
   useEffect(() => {
     if (!session) return;

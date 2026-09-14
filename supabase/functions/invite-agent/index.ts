@@ -3,188 +3,163 @@
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const json = (body, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  if (req.method !== "POST") {
-    return json({ error: "Method not allowed" }, 405);
-  }
-
   try {
-    const authHeader = req.headers.get("Authorization");
-
-    if (!authHeader) {
-      return json({ error: "Authentication required" }, 401);
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-      return json({ error: "Supabase function configuration is incomplete" }, 500);
-    }
-
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
-      },
-    });
-
-    const {
-      data: { user: caller },
-      error: callerError,
-    } = await callerClient.auth.getUser();
-
-    if (callerError || !caller) {
-      return json({ error: "Invalid authentication session" }, 401);
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error("Server configuration is incomplete");
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data: callerProfile, error: profileError } = await adminClient
-      .from("profiles")
-      .select("id, role")
-      .eq("id", caller.id)
-      .maybeSingle();
-
-    if (profileError) {
-      return json({ error: "Could not verify administrator" }, 500);
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    if (!callerProfile || !["admin", "supervisor"].includes(callerProfile.role)) {
-      return json({ error: "Administrator permission required" }, 403);
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user: caller },
+      error: callerError,
+    } = await adminClient.auth.getUser(token);
+
+    if (callerError || !caller) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: callerProfile, error: profileError } = await adminClient
+      .from("profiles")
+      .select("id, role, account_status")
+      .eq("id", caller.id)
+      .single();
+
+    if (
+      profileError ||
+      !callerProfile ||
+      callerProfile.role !== "admin" ||
+      callerProfile.account_status !== "active"
+    ) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Admin access required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const { data: membership, error: membershipError } = await adminClient
       .from("organization_memberships")
-      .select("organization_id, role")
+      .select("organization_id, role, status")
       .eq("user_id", caller.id)
       .eq("role", "admin")
+      .eq("status", "active")
       .limit(1)
       .maybeSingle();
 
-    if (membershipError) {
-      return json({ error: "Could not determine organization" }, 500);
-    }
-
-    if (!membership?.organization_id) {
-      return json({ error: "Administrator is not assigned to an organization" }, 403);
+    if (membershipError || !membership) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Active organization membership required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const body = await req.json();
 
     const email = String(body.email || "").trim().toLowerCase();
+    const role = String(body.role || "field_agent").trim();
     const fullName = String(body.full_name || "").trim();
     const phone = String(body.phone || "").trim();
-    const role = String(body.role || "field_agent").trim();
     const county = String(body.county || "").trim();
     const constituency = String(body.constituency || "").trim();
     const ward = String(body.ward || "").trim();
 
     if (!email || !fullName) {
-      return json({ error: "Email and full name are required" }, 400);
+      throw new Error("Email and full name are required");
     }
 
     if (!["field_agent", "supervisor"].includes(role)) {
-      return json({ error: "Invalid agent role" }, 400);
+      throw new Error("Invalid role");
     }
-
-    const agentReference =
-      "AGT-" + Math.floor(100000 + Math.random() * 900000).toString();
-
-    const operatingArea = [county, constituency, ward]
-      .filter(Boolean)
-      .join(" / ");
 
     const { data: invited, error: inviteError } =
       await adminClient.auth.admin.inviteUserByEmail(email, {
         data: {
           full_name: fullName,
-          role,
-          agent_reference: agentReference,
-          phone,
-          county,
-          constituency,
-          ward,
+          invited_role: role,
           organization_id: membership.organization_id,
         },
       });
 
     if (inviteError) {
-      return json({ error: inviteError.message }, 400);
+      throw inviteError;
     }
 
-    if (!invited?.user?.id) {
-      return json({ error: "Invitation was not created" }, 500);
-    }
-
-    const userId = invited.user.id;
-
-    const { error: upsertProfileError } = await adminClient
+    const { error: profileInsertError } = await adminClient
       .from("profiles")
       .upsert(
         {
-          id: userId,
+          id: invited.user.id,
           role,
-          agent_reference: agentReference,
-          operating_area: operatingArea || null,
           phone: phone || null,
           account_status: "active",
         },
         { onConflict: "id" }
       );
 
-    if (upsertProfileError) {
-      await adminClient.auth.admin.deleteUser(userId);
-      return json({ error: upsertProfileError.message }, 500);
+    if (profileInsertError) {
+      throw profileInsertError;
     }
 
     const { error: membershipInsertError } = await adminClient
       .from("organization_memberships")
-      .upsert(
-        {
-          organization_id: membership.organization_id,
-          user_id: userId,
-          role,
-        },
-        { onConflict: "organization_id,user_id" }
-      );
+      .insert({
+        organization_id: membership.organization_id,
+        user_id: invited.user.id,
+        role,
+        status: "active",
+      });
 
     if (membershipInsertError) {
-      await adminClient.from("profiles").delete().eq("id", userId);
-      await adminClient.auth.admin.deleteUser(userId);
-      return json({ error: membershipInsertError.message }, 500);
+      throw membershipInsertError;
     }
 
-    return json({
-      success: true,
-      user_id: userId,
-      email,
-      role,
-      agent_reference: agentReference,
-      organization_id: membership.organization_id,
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        user_id: invited.user.id,
+        email,
+        role,
+        organization_id: membership.organization_id,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     console.error("invite-agent error:", error);
-    return json(
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error?.message || "Invitation failed",
+      }),
       {
-        error: error instanceof Error ? error.message : "Unexpected server error",
-      },
-      500
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });

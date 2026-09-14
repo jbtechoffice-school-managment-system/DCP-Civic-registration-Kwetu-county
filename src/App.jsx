@@ -1,99 +1,100 @@
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { lazyPage } from '@/lib/lazyPage';
 import { Toaster } from "@/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import PageNotFound from './lib/PageNotFound';
+const PageNotFound = lazyPage(() => import('./lib/PageNotFound'));
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
+const Login = lazyPage(() => import('./pages/Login'));
+const Register = lazyPage(() => import('./pages/Register'));
+const ForgotPassword = lazyPage(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazyPage(() => import('./pages/ResetPassword'));
 import HomeRedirect from '@/components/HomeRedirect';
 import AgentLayout from '@/components/AgentLayout';
 import AdminLayout from '@/components/AdminLayout';
-import AgentHome from '@/agent/AgentHome';
-import NewRegistration from '@/agent/NewRegistration';
-import MyRegistrations from '@/agent/MyRegistrations';
-import AgentMessages from '@/agent/AgentMessages';
-import AgentNotifications from '@/agent/AgentNotifications';
-import AgentProfile from '@/agent/AgentProfile';
-import AdminDashboard from '@/admin/AdminDashboard';
-import AdminAgents from '@/admin/AdminAgents';
-import AdminRegistrations from '@/admin/AdminRegistrations';
-import AdminMap from '@/admin/AdminMap';
-import AdminMessages from '@/admin/AdminMessages';
-import AdminNotifications from '@/admin/AdminNotifications';
-import AdminReports from '@/admin/AdminReports';
-import AdminAuditLogs from '@/admin/AdminAuditLogs';
-import AdminSettings from '@/admin/AdminSettings';
-import RegistrationSummary from '@/admin/RegistrationSummary';
-import AgentPerformance from '@/admin/AgentPerformance';
-import AgentLeaderboard from '@/admin/AgentLeaderboard';
-import AgentSchedule from '@/admin/AgentSchedule';
-import UnreviewedRegistrations from '@/admin/UnreviewedRegistrations';
-import RegistrationStatistics from '@/admin/RegistrationStatistics';
-import RegistrationDetails from '@/admin/RegistrationDetails';
-import FieldSessionLog from '@/admin/FieldSessionLog';
-import BroadcastNotices from '@/admin/BroadcastNotices';
-import DataExport from '@/admin/DataExport';
-import RegistrationMap from '@/admin/RegistrationMap';
-import AgentDirectory from '@/admin/AgentDirectory';
-import RegistrationAnalytics from '@/admin/RegistrationAnalytics';
-import HelpCenter from '@/pages/HelpCenter';
-import SystemStatus from '@/pages/SystemStatus';
-import FieldResources from '@/agent/FieldResources';
-import FieldGuidelines from '@/agent/FieldGuidelines';
+const AgentHome = lazyPage(() => import('./agent/AgentHome'));
+const NewRegistration = lazyPage(() => import('./agent/NewRegistration'));
+const MyRegistrations = lazyPage(() => import('./agent/MyRegistrations'));
+const AgentMessages = lazyPage(() => import('./agent/AgentMessages'));
+const AgentNotifications = lazyPage(() => import('./agent/AgentNotifications'));
+const AgentProfile = lazyPage(() => import('./agent/AgentProfile'));
+const AdminDashboard = lazyPage(() => import('./admin/AdminDashboard'));
+const AdminAgents = lazyPage(() => import('./admin/AdminAgents'));
+const AdminRegistrations = lazyPage(() => import('./admin/AdminRegistrations'));
+const AdminMap = lazyPage(() => import('./admin/AdminMap'));
+const AdminMessages = lazyPage(() => import('./admin/AdminMessages'));
+const AdminNotifications = lazyPage(() => import('./admin/AdminNotifications'));
+const AdminReports = lazyPage(() => import('./admin/AdminReports'));
+const AdminAuditLogs = lazyPage(() => import('./admin/AdminAuditLogs'));
+const AdminSettings = lazyPage(() => import('./admin/AdminSettings'));
+const RegistrationSummary = lazyPage(() => import('./admin/RegistrationSummary'));
+const AgentPerformance = lazyPage(() => import('./admin/AgentPerformance'));
+const AgentLeaderboard = lazyPage(() => import('./admin/AgentLeaderboard'));
+const AgentSchedule = lazyPage(() => import('./admin/AgentSchedule'));
+const UnreviewedRegistrations = lazyPage(() => import('./admin/UnreviewedRegistrations'));
+const RegistrationStatistics = lazyPage(() => import('./admin/RegistrationStatistics'));
+const RegistrationDetails = lazyPage(() => import('./admin/RegistrationDetails'));
+const FieldSessionLog = lazyPage(() => import('./admin/FieldSessionLog'));
+const BroadcastNotices = lazyPage(() => import('./admin/BroadcastNotices'));
+const DataExport = lazyPage(() => import('./admin/DataExport'));
+const RegistrationMap = lazyPage(() => import('./admin/RegistrationMap'));
+const AgentDirectory = lazyPage(() => import('./admin/AgentDirectory'));
+const RegistrationAnalytics = lazyPage(() => import('./admin/RegistrationAnalytics'));
+const HelpCenter = lazyPage(() => import('./pages/HelpCenter'));
+const SystemStatus = lazyPage(() => import('./pages/SystemStatus'));
+const FieldResources = lazyPage(() => import('./agent/FieldResources'));
+const FieldGuidelines = lazyPage(() => import('./agent/FieldGuidelines'));
 import { ThemeProvider } from 'next-themes';
 import { LanguageProvider } from '@/lib/i18n';
-import SystemUsageGuide from '@/guide/SystemUsageGuide';
-import SupportPortal from '@/pages/SupportPortal';
-import CommunityAnalytics from '@/admin/CommunityAnalytics';
-import PrivacyPolicy from '@/pages/PrivacyPolicy';
-import AgentOnboarding from '@/admin/AgentOnboarding';
-import DataIntegrityAudit from '@/admin/DataIntegrityAudit';
-import AreaCoverageMap from '@/admin/AreaCoverageMap';
-import ConfigurationSettings from '@/admin/ConfigurationSettings';
-import RegistrationArchive from '@/admin/RegistrationArchive';
-import FieldSessionMap from '@/admin/FieldSessionMap';
-import NotificationTemplates from '@/admin/NotificationTemplates';
-import RegistrationStatusHistory from '@/admin/RegistrationStatusHistory';
-import AdminImport from '@/admin/AdminImport';
-import NeedsReview from '@/admin/NeedsReview';
-import DataImportHub from '@/admin/DataImportHub';
-import AgentInsights from '@/admin/AgentInsights';
-import SecurityAudit from '@/admin/SecurityAudit';
-import CommunityDirectory from '@/admin/CommunityDirectory';
-import TrainingMaterials from '@/agent/TrainingMaterials';
-import AgentFeedback from '@/agent/AgentFeedback';
-import ActivityStream from '@/admin/ActivityStream';
-import ComplianceCheck from '@/admin/ComplianceCheck';
-import ResourceLibrary from '@/agent/ResourceLibrary';
-import OperationalAlerts from '@/admin/OperationalAlerts';
-import DataIntegrityLogs from '@/admin/DataIntegrityLogs';
-import RegistrationHeatmap from '@/admin/RegistrationHeatmap';
-import SupportTickets from '@/admin/SupportTickets';
-import SyncConflicts from '@/admin/SyncConflicts';
-import ContentLibrary from '@/admin/ContentLibrary';
-import GeoZones from '@/admin/GeoZones';
-import SystemAlerts from '@/admin/SystemAlerts';
-import VerificationQueue from '@/admin/VerificationQueue';
-import QuickTraining from '@/agent/QuickTraining';
-import FieldCalendar from '@/agent/FieldCalendar';
-import DailySummary from '@/admin/DailySummary';
-import RegionalAnalytics from '@/admin/RegionalAnalytics';
-import SystemHelp from '@/pages/SystemHelp';
-import AttendanceTracker from '@/admin/AttendanceTracker';
-import TrainingHub from '@/pages/TrainingHub';
-import DeviceManagement from '@/admin/DeviceManagement';
-import UserInvitations from '@/admin/UserInvitations';
-import CommunityNewsFeed from '@/pages/CommunityNewsFeed';
-import DataIntegrityCheck from '@/admin/DataIntegrityCheck';
-import FieldSafetyCheckin from '@/pages/FieldSafetyCheckin';
-import BroadcastMessages from '@/admin/BroadcastMessages';
+const SystemUsageGuide = lazyPage(() => import('./guide/SystemUsageGuide'));
+const SupportPortal = lazyPage(() => import('./pages/SupportPortal'));
+const CommunityAnalytics = lazyPage(() => import('./admin/CommunityAnalytics'));
+const PrivacyPolicy = lazyPage(() => import('./pages/PrivacyPolicy'));
+const AgentOnboarding = lazyPage(() => import('./admin/AgentOnboarding'));
+const DataIntegrityAudit = lazyPage(() => import('./admin/DataIntegrityAudit'));
+const AreaCoverageMap = lazyPage(() => import('./admin/AreaCoverageMap'));
+const ConfigurationSettings = lazyPage(() => import('./admin/ConfigurationSettings'));
+const RegistrationArchive = lazyPage(() => import('./admin/RegistrationArchive'));
+const FieldSessionMap = lazyPage(() => import('./admin/FieldSessionMap'));
+const NotificationTemplates = lazyPage(() => import('./admin/NotificationTemplates'));
+const RegistrationStatusHistory = lazyPage(() => import('./admin/RegistrationStatusHistory'));
+const AdminImport = lazyPage(() => import('./admin/AdminImport'));
+const NeedsReview = lazyPage(() => import('./admin/NeedsReview'));
+const DataImportHub = lazyPage(() => import('./admin/DataImportHub'));
+const AgentInsights = lazyPage(() => import('./admin/AgentInsights'));
+const SecurityAudit = lazyPage(() => import('./admin/SecurityAudit'));
+const CommunityDirectory = lazyPage(() => import('./admin/CommunityDirectory'));
+const TrainingMaterials = lazyPage(() => import('./agent/TrainingMaterials'));
+const AgentFeedback = lazyPage(() => import('./agent/AgentFeedback'));
+const ActivityStream = lazyPage(() => import('./admin/ActivityStream'));
+const ComplianceCheck = lazyPage(() => import('./admin/ComplianceCheck'));
+const ResourceLibrary = lazyPage(() => import('./agent/ResourceLibrary'));
+const OperationalAlerts = lazyPage(() => import('./admin/OperationalAlerts'));
+const DataIntegrityLogs = lazyPage(() => import('./admin/DataIntegrityLogs'));
+const RegistrationHeatmap = lazyPage(() => import('./admin/RegistrationHeatmap'));
+const SupportTickets = lazyPage(() => import('./admin/SupportTickets'));
+const SyncConflicts = lazyPage(() => import('./admin/SyncConflicts'));
+const ContentLibrary = lazyPage(() => import('./admin/ContentLibrary'));
+const GeoZones = lazyPage(() => import('./admin/GeoZones'));
+const SystemAlerts = lazyPage(() => import('./admin/SystemAlerts'));
+const VerificationQueue = lazyPage(() => import('./admin/VerificationQueue'));
+const QuickTraining = lazyPage(() => import('./agent/QuickTraining'));
+const FieldCalendar = lazyPage(() => import('./agent/FieldCalendar'));
+const DailySummary = lazyPage(() => import('./admin/DailySummary'));
+const RegionalAnalytics = lazyPage(() => import('./admin/RegionalAnalytics'));
+const SystemHelp = lazyPage(() => import('./pages/SystemHelp'));
+const AttendanceTracker = lazyPage(() => import('./admin/AttendanceTracker'));
+const TrainingHub = lazyPage(() => import('./pages/TrainingHub'));
+const DeviceManagement = lazyPage(() => import('./admin/DeviceManagement'));
+const UserInvitations = lazyPage(() => import('./admin/UserInvitations'));
+const CommunityNewsFeed = lazyPage(() => import('./pages/CommunityNewsFeed'));
+const DataIntegrityCheck = lazyPage(() => import('./admin/DataIntegrityCheck'));
+const FieldSafetyCheckin = lazyPage(() => import('./pages/FieldSafetyCheckin'));
+const BroadcastMessages = lazyPage(() => import('./admin/BroadcastMessages'));
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -107,12 +108,26 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
+  // Public authentication pages must remain accessible
+  // even when there is no authenticated Supabase session.
+  const publicAuthPaths = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+  ];
+
+  const currentPath = window.location.pathname;
+  const isPublicAuthPath = publicAuthPaths.includes(currentPath);
+
+  // Authentication errors for protected areas should redirect to login.
+  // Never redirect when the user is already on a public auth page.
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
+    }
+
+    if (authError.type === 'auth_required' && !isPublicAuthPath) {
       navigateToLogin();
       return null;
     }
@@ -241,3 +256,4 @@ function App() {
 }
 
 export default App
+
